@@ -1,6 +1,17 @@
 # Copyright Authors of Cilium
 # SPDX-License-Identifier: Apache-2.0
 
+run-local: cilium-dbg daemon
+	#--kvstore=consul --kvstore-opt=consul.address=127.0.0.1:8500
+	sudo -E ./daemon/cilium-agent \
+		--kvstore=nomad \
+		--enable-ipv6=false \
+		--ipv4-range=172.16.0.0/16 \
+		--tunnel-protocol=geneve \
+		--enable-l7-proxy=false \
+		> /tmp/cilium.log 2>&1 \
+		;
+
 ##@ Default
 all: precheck build postcheck ## Default make target that perform precheck -> build -> postcheck
 	@echo "Build finished."
@@ -227,6 +238,12 @@ GIT_VERSION: force
 include Makefile.kind
 
 -include Makefile.docker
+container-local: build-container
+	make dev-docker-image DOCKER_IMAGE_TAG=local
+	docker tag quay.io/cilium/cilium-dev:local cilium/cilium:local
+	#docker tag quay.io/cilium/cilium-dev:local 192.168.1.32:5000/cilium:local
+	#docker push 192.168.1.32:5000/cilium:local
+
 
 ##@ API targets
 CRD_OPTIONS ?= "crd:crdVersions=v1"
